@@ -240,15 +240,16 @@ export const getWidgetDynamicTriggerPathList = (
   return [];
 };
 
-// TODO: Fix this the next time the file is edited
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const isPathDynamicTrigger = (widget: any, path: string): boolean => {
+export const isPathDynamicTrigger = (
+  entity: DataTreeEntityConfig | WidgetProps,
+  path: string,
+): boolean => {
   if (
-    widget &&
-    widget.dynamicTriggerPathList &&
-    Array.isArray(widget.dynamicTriggerPathList)
+    entity &&
+    entity.dynamicTriggerPathList &&
+    Array.isArray(entity.dynamicTriggerPathList)
   ) {
-    return _.find(widget.dynamicTriggerPathList, { key: path }) !== undefined;
+    return _.find(entity.dynamicTriggerPathList, { key: path }) !== undefined;
   }
 
   return false;
@@ -298,6 +299,46 @@ export const unsafeFunctionForEval = [
   "Navigator",
 ];
 
+/**
+ * Checks if a child property path starts with the parent property path
+ * using either dot notation (.) or bracket notation ([)
+ *
+ * @param parentPropertyPath - The parent property path
+ * @param childPropertyPath - The child property path to check
+ * @returns true if childPropertyPath is a child of parentPropertyPath
+ *
+ * @example
+ * isChildPropertyPathStartsWithParent("Table1", "Table1.data") // true
+ * isChildPropertyPathStartsWithParent("Table1", "Table1[0]") // true
+ * isChildPropertyPathStartsWithParent("Table1", "Table2.data") // false
+ */
+export const isChildPropertyPathStartsWithParent = (
+  parentPropertyPath: string,
+  childPropertyPath: string,
+): boolean => {
+  if (!parentPropertyPath || !childPropertyPath) {
+    return false;
+  }
+
+  const parentLength = parentPropertyPath.length;
+
+  if (childPropertyPath.length <= parentLength) {
+    return false;
+  }
+
+  // Most common case: dot notation
+  if (childPropertyPath[parentLength] === ".") {
+    return childPropertyPath.startsWith(parentPropertyPath);
+  }
+
+  // Less common case: bracket notation
+  if (childPropertyPath[parentLength] === "[") {
+    return childPropertyPath.startsWith(parentPropertyPath);
+  }
+
+  return false;
+};
+
 export const isChildPropertyPath = (
   parentPropertyPath: string,
   childPropertyPath: string,
@@ -307,8 +348,7 @@ export const isChildPropertyPath = (
 ): boolean => {
   return (
     (!strict && parentPropertyPath === childPropertyPath) ||
-    childPropertyPath.startsWith(`${parentPropertyPath}.`) ||
-    childPropertyPath.startsWith(`${parentPropertyPath}[`)
+    isChildPropertyPathStartsWithParent(parentPropertyPath, childPropertyPath)
   );
 };
 
@@ -638,4 +678,14 @@ export function getEntityName(
   if (isWidget(entity)) return entity.widgetName;
 
   if (isJSAction(entity)) return entityConfig.name;
+}
+
+export function getDifferences<T>(a: Set<T>, b: Set<T>): T[] {
+  const diff: T[] = [];
+
+  for (const val of a) {
+    if (!b.has(val)) diff.push(val);
+  }
+
+  return diff;
 }

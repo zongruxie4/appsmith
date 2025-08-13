@@ -69,6 +69,7 @@ export const DATA_SOURCES_EDITOR_ID_PATH = `/datasource/:datasourceId`;
 export const APP_LIBRARIES_EDITOR_PATH = `/libraries`;
 export const APP_PACKAGES_EDITOR_PATH = `/packages`;
 export const APP_SETTINGS_EDITOR_PATH = `/settings`;
+export const APP_TRIGGER_SETTINGS_EDITOR_PATH = `/trigger-settings`;
 export const SAAS_GSHEET_EDITOR_ID_PATH = `/saas/google-sheets-plugin/datasources/:datasourceId`;
 export const BUILDER_CHECKLIST_PATH = `/checklist`;
 export const ADMIN_SETTINGS_PATH = "/settings";
@@ -123,10 +124,12 @@ export const matchViewerForkPath = (pathName: string) =>
   match(`${VIEWER_PATH_DEPRECATED}${VIEWER_FORK_PATH}`)(pathName);
 
 export const matchAppLibrariesPath = (pathName: string) =>
-  match(`${BUILDER_PATH}${APP_LIBRARIES_EDITOR_PATH}`)(pathName);
+  match(`${BUILDER_PATH}${APP_LIBRARIES_EDITOR_PATH}`)(pathName) ||
+  match(`${BUILDER_CUSTOM_PATH}${APP_LIBRARIES_EDITOR_PATH}`)(pathName);
 
 export const matchAppPackagesPath = (pathName: string) =>
-  match(`${BUILDER_PATH}${APP_PACKAGES_EDITOR_PATH}`)(pathName);
+  match(`${BUILDER_PATH}${APP_PACKAGES_EDITOR_PATH}`)(pathName) ||
+  match(`${BUILDER_CUSTOM_PATH}${APP_PACKAGES_EDITOR_PATH}`)(pathName);
 
 export const addBranchParam = (branch: string) => {
   const url = new URL(window.location.href);

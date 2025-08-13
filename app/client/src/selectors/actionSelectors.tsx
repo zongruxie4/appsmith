@@ -1,7 +1,8 @@
 import type { DataTree } from "entities/DataTree/dataTreeTypes";
 import { createSelector } from "reselect";
 import WidgetFactory from "WidgetProvider/factory";
-import type { FlattenedWidgetProps } from "WidgetProvider/constants";
+import { getWidgetConfigsVersion } from "WidgetProvider/factory/widgetConfigVersion";
+import type { FlattenedWidgetProps } from "WidgetProvider/types";
 import type { JSLibrary } from "workers/common/JSLibrary";
 import { getDataTree } from "./dataTreeSelectors";
 import {
@@ -24,6 +25,7 @@ export const getUsedActionNames = createSelector(
   getDataTree,
   getParentWidget,
   selectInstalledLibraries,
+  getWidgetConfigsVersion, // Add dependency on widget configs version
   (
     // TODO: Fix this the next time the file is edited
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

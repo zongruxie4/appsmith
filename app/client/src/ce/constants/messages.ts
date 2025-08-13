@@ -87,6 +87,8 @@ export const ALREADY_HAVE_AN_ACCOUNT = () => `Already have an account?`;
 export const LOOKING_TO_SELF_HOST = () => "Looking to self-host Appsmith?";
 export const VISIT_OUR_DOCS = () => "Visit our docs";
 export const ALREADY_USING_APPSMITH = () => `Already using Appsmith?`;
+export const USING_APPSMITH = () => `Using Appsmith?`;
+export const YOU_VE_ALREADY_SIGNED_INTO = () => `You've already signed into`;
 export const SIGN_IN_TO_AN_EXISTING_ORGANISATION = () =>
   `Sign in to an existing organisation`;
 
@@ -1696,13 +1698,13 @@ export const ADMIN_BRANDING_LOGO_FORMAT_ERROR = () =>
 export const ADMIN_BRANDING_LOGO_REQUIREMENT = () =>
   `.SVG, .PNG, or .JPG only • Max 2MB`;
 export const ADMIN_BRANDING_FAVICON_DIMENSION_ERROR = () =>
-  `Uploaded file must have a max size of 32X32 pixels`;
+  `Uploaded file must have a max size of 48X48 pixels`;
 export const ADMIN_BRANDING_FAVICON_SIZE_ERROR = () =>
   `Uploaded file must be less than 2MB`;
 export const ADMIN_BRANDING_FAVICON_FORMAT_ERROR = () =>
   `Uploaded file must be in .ICO, .PNG, and .JPG formats`;
 export const ADMIN_BRANDING_FAVICON_REQUIREMENT = () =>
-  `.ICO, .PNG, or .JPG only • Max 32X32`;
+  `.ICO, .PNG, or .JPG only • Max 48X48`;
 export const PROFILE_DISPLAY_PICTURE_REQUIREMENT = () =>
   `.ICO, .PNG, or .JPG only • Max 32X32`;
 export const ADMIN_BRANDING_COLOR_TOOLTIP_PRIMARY = () =>
@@ -2715,3 +2717,5 @@ export const MULTI_ORG_FOOTER_CREATE_ORG_LEFT_TEXT = () =>
   "Looking to create one?";
 export const MULTI_ORG_FOOTER_CREATE_ORG_RIGHT_TEXT = () =>
   "Create an organization";
+
+export const PENDING_INVITATIONS = () => "Pending invitations";

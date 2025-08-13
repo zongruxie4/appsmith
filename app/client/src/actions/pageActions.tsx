@@ -20,7 +20,7 @@ import type { APP_MODE } from "entities/App";
 import type { CanvasWidgetsReduxState } from "ee/reducers/entityReducers/canvasWidgetsReducer";
 import type { ENTITY_TYPE } from "ee/entities/AppsmithConsole/utils";
 import type { Replayable } from "entities/Replay/ReplayEntity/ReplayEditor";
-import type { DSLWidget } from "../WidgetProvider/constants";
+import type { DSLWidget } from "WidgetProvider/types";
 import type {
   LayoutOnLoadActionErrors,
   PageAction,
@@ -30,6 +30,8 @@ import type { PACKAGE_PULL_STATUS } from "ee/constants/ModuleConstants";
 import type { ApiResponse } from "api/ApiResponses";
 import type { EvaluationReduxAction } from "./EvaluationReduxActionTypes";
 import { appsmithTelemetry } from "instrumentation";
+import type { NavigateToAnotherPagePayload } from "sagas/ActionExecution/NavigateActionSaga/types";
+import type { Path } from "history";
 
 export interface FetchPageListPayload {
   applicationId: string;
@@ -695,4 +697,11 @@ export const setupPublishedPage = (
     bustCache,
     pageWithMigratedDsl,
   },
+});
+
+export const navigateToAnotherPage = (
+  payload: NavigateToAnotherPagePayload | Path,
+) => ({
+  type: ReduxActionTypes.NAVIGATE_TO_ANOTHER_PAGE,
+  payload,
 });

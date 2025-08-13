@@ -39,6 +39,7 @@ export enum ActionExecutionContext {
   PAGE_LOAD = "PAGE_LOAD",
   EVALUATION_ACTION_TRIGGER = "EVALUATION_ACTION_TRIGGER",
   REFRESH_ACTIONS_ON_ENV_CHANGE = "REFRESH_ACTIONS_ON_ENV_CHANGE",
+  PAGE_UNLOAD = "PAGE_UNLOAD",
 }
 
 export interface KeyValuePair {
@@ -286,6 +287,12 @@ export function getGraphQLPlugin(plugins: Plugin[]): Plugin | undefined {
 
 export function getAppsmithAIPlugin(plugins: Plugin[]): Plugin | undefined {
   return plugins.find((p) => p.packageName === PluginPackageName.APPSMITH_AI);
+}
+
+export function getAppsmithAgentPlugin(plugins: Plugin[]): Plugin | undefined {
+  return plugins.find(
+    (p) => p.packageName === PluginPackageName.APPSMITH_AGENT,
+  );
 }
 
 export function isGraphqlPlugin(plugin: Plugin | undefined) {

@@ -30,12 +30,13 @@ import type { MainCanvasReduxState } from "ee/reducers/uiReducers/mainCanvasRedu
 import { getActionEditorSavingMap } from "PluginActionEditor/store";
 import {
   getCanvasWidgets,
+  getAllJSCollectionActions,
   getJSCollections,
 } from "ee/selectors/entitiesSelector";
 import { checkIsDropTarget } from "WidgetProvider/factory/helpers";
 import { buildChildWidgetTree } from "utils/widgetRenderUtils";
 import { LOCAL_STORAGE_KEYS } from "utils/localStorage";
-import type { CanvasWidgetStructure } from "WidgetProvider/constants";
+import type { CanvasWidgetStructure } from "WidgetProvider/types";
 import { denormalize } from "utils/canvasStructureHelpers";
 import { isAutoHeightEnabledForWidget } from "widgets/WidgetUtils";
 import WidgetFactory from "WidgetProvider/factory";
@@ -50,6 +51,8 @@ import { getCurrentApplication } from "ee/selectors/applicationSelectors";
 import type { Page } from "entities/Page";
 import { objectKeys } from "@appsmith/utils";
 import type { MetaWidgetsReduxState } from "reducers/entityReducers/metaWidgetsReducer";
+import { ActionRunBehaviour } from "PluginActionEditor/types/PluginActionTypes";
+import { getWidgetConfigsVersion } from "WidgetProvider/factory/widgetConfigVersion";
 
 const getIsDraggingOrResizing = (state: DefaultRootState) =>
   state.ui.widgetDragResize.isResizing || state.ui.widgetDragResize.isDragging;
@@ -123,12 +126,29 @@ export const getPageSavingError = (state: DefaultRootState) => {
   return state.ui.editor.loadingStates.savingError;
 };
 
+export const getCurrentPageId = (state: DefaultRootState) =>
+  state.entities.pageList.currentPageId;
+
 export const getLayoutOnLoadActions = (state: DefaultRootState) =>
   state.ui.editor.pageActions || [];
+
+export const getLayoutOnUnloadActions = createSelector(
+  getCurrentPageId,
+  getAllJSCollectionActions,
+  (currentPageId, jsActions) =>
+    jsActions.filter(
+      (action) =>
+        action.runBehaviour === ActionRunBehaviour.ON_PAGE_UNLOAD &&
+        action.pageId === currentPageId,
+    ),
+);
 
 export const getLayoutOnLoadIssues = (state: DefaultRootState) => {
   return state.ui.editor.layoutOnLoadActionErrors || [];
 };
+
+export const getOnLoadActionsWithExecutionStatus = (state: DefaultRootState) =>
+  state.ui.editor.onLoadActionExecution;
 
 export const getIsPublishingApplication = (state: DefaultRootState) =>
   state.ui.editor.loadingStates.publishing;
@@ -152,9 +172,6 @@ export const getPageByBaseId = (basePageId: string) =>
   createSelector(getPageList, (pages: Page[]) =>
     pages.find((page) => page.basePageId === basePageId),
   );
-
-export const getCurrentPageId = (state: DefaultRootState) =>
-  state.entities.pageList.currentPageId;
 
 export const getCurrentBasePageId = (state: DefaultRootState) =>
   state.entities.pageList.currentBasePageId;
@@ -382,6 +399,7 @@ const isModuleWidget = (
 export const getWidgetCards = createSelector(
   getIsAutoLayout,
   getIsAnvilLayout,
+  getWidgetConfigsVersion, // Add dependency on widget configs version
   (isAutoLayout, isAnvilLayout) => {
     const widgetConfigs = WidgetFactory.getConfigs();
     const widgetConfigsArray = Object.values(widgetConfigs);

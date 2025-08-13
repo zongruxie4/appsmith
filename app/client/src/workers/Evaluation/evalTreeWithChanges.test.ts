@@ -172,6 +172,7 @@ describe("getAffectedNodesInTheDataTree", () => {
     expect(result).toEqual(["Text1.text"]);
   });
 });
+
 describe("evaluateAndGenerateResponse", () => {
   let evaluator: DataTreeEvaluator;
   const UPDATED_LABEL = "updated Label";
@@ -234,6 +235,7 @@ describe("evaluateAndGenerateResponse", () => {
         errors: [],
         evalMetaUpdates: [],
         evaluationOrder: [],
+        executeReactiveActions: [],
         isCreateFirstTree: false,
         isNewWidgetAdded: false,
         jsUpdates: {},
