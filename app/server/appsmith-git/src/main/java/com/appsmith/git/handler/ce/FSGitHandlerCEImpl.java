@@ -21,6 +21,7 @@ import com.appsmith.git.constants.GitDirectories;
 import com.appsmith.git.helpers.RepositoryHelper;
 import com.appsmith.git.helpers.SshTransportConfigCallback;
 import com.appsmith.git.helpers.StopwatchHelpers;
+import com.appsmith.git.service.BashService;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Span;
 import lombok.RequiredArgsConstructor;
@@ -111,6 +112,8 @@ public class FSGitHandlerCEImpl implements FSGitHandler {
 
     private static final String SUCCESS_MERGE_STATUS = "This branch has no conflicts with the base branch.";
     private final ObservationHelper observationHelper;
+
+    private final BashService bashService = new BashService();
 
     /**
      * This method will handle the git-commit functionality. Under the hood it checks if the repo has already been
@@ -1108,6 +1111,14 @@ public class FSGitHandlerCEImpl implements FSGitHandler {
     }
 
     @Override
+    public Mono<String> mergeBranch(Path repoSuffix, String sourceBranch, String destinationBranch) {
+        String repoPath = createRepoPath(repoSuffix).toString();
+        return bashService
+                .callFunction("git.sh", "git_merge_branch", repoPath, sourceBranch, destinationBranch)
+                .map(result -> result.getOutput());
+    }
+
+    @Override
     public Mono<String> mergeBranch(
             Path repoSuffix, String sourceBranch, String destinationBranch, boolean keepWorkingDirChanges) {
         return Mono.using(
@@ -1477,7 +1488,7 @@ public class FSGitHandlerCEImpl implements FSGitHandler {
     /**
      * reset to last commit on the current branch itself but doesn't checkout to any specific branch
      * @param repoSuffix suffixedPath used to generate the base repo path this includes workspaceId, defaultAppId, repoName
-     * @return a boolean whether the operation was successfull or not
+     * @return a boolean whether the operation was successful or not
      */
     public Mono<Boolean> resetToLastCommit(Path repoSuffix) {
         return Mono.using(
@@ -1563,9 +1574,9 @@ public class FSGitHandlerCEImpl implements FSGitHandler {
     }
 
     @Override
-    public Mono<BranchTrackingStatus> getBranchTrackingStatus(Path repoPath, String branchName) {
+    public Mono<BranchTrackingStatus> getBranchTrackingStatus(Path repoSuffix, String branchName) {
         return Mono.using(
-                        () -> Git.open(repoPath.toFile()),
+                        () -> Git.open(createRepoPath(repoSuffix).toFile()),
                         git -> Mono.fromCallable(() -> {
                                     Span jgitBranchTrackingSpan =
                                             observationHelper.createSpan(GitSpan.JGIT_BRANCH_TRACK);

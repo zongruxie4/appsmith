@@ -14,12 +14,9 @@ import {
 import { updateDependencyMap } from "workers/common/DependencyMap";
 import { replaceThisDotParams } from "./utils";
 import { isDataField } from "./utils";
-import widgets from "widgets";
-import type { WidgetConfiguration } from "WidgetProvider/constants";
-import {
-  EvaluationSubstitutionType,
-  type WidgetEntity,
-} from "ee/entities/DataTree/types";
+import { loadAllWidgets } from "widgets";
+import type { WidgetConfiguration } from "WidgetProvider/types";
+import { type WidgetEntity } from "ee/entities/DataTree/types";
 import {
   EXECUTION_PARAM_KEY,
   EXECUTION_PARAM_REFERENCE_REGEX,
@@ -27,6 +24,7 @@ import {
 import generateOverrideContext from "ee/workers/Evaluation/generateOverrideContext";
 import { klona } from "klona";
 import { APP_MODE } from "entities/App";
+import { EvaluationSubstitutionType } from "constants/EvaluationConstants";
 
 const widgetConfigMap: Record<
   string,
@@ -37,14 +35,18 @@ const widgetConfigMap: Record<
   }
 > = {};
 
-widgets.map((widget) => {
-  if (widget.type) {
-    widgetConfigMap[widget.type] = {
-      defaultProperties: widget.getDefaultPropertiesMap(),
-      derivedProperties: widget.getDerivedPropertiesMap(),
-      metaProperties: widget.getMetaPropertiesMap(),
-    };
-  }
+beforeAll(async () => {
+  const loadedWidgets = await loadAllWidgets();
+
+  loadedWidgets.forEach((widget) => {
+    if (widget.type) {
+      widgetConfigMap[widget.type] = {
+        defaultProperties: widget.getDefaultPropertiesMap(),
+        derivedProperties: widget.getDerivedPropertiesMap(),
+        metaProperties: widget.getMetaPropertiesMap(),
+      };
+    }
+  });
 });
 
 jest.mock("ee/workers/Evaluation/generateOverrideContext"); // mock the generateOverrideContext function
@@ -306,6 +308,7 @@ describe("DataTreeEvaluator", () => {
         evalOrder,
         configTree as unknown as ConfigTree,
         unEvalUpdates,
+        [],
       );
 
       expect(dataTreeEvaluator.dependencies).toStrictEqual({
@@ -477,16 +480,15 @@ describe("DataTreeEvaluator", () => {
             evalOrder,
             arrayAccessorCyclicDependencyConfig.apiSuccessConfigTree,
             unEvalUpdates,
+            [],
           );
-          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-            "Api1.data",
-          ]);
-          expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([
-            "Api1.data[2]",
-          ]);
-          expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual([
-            "Api1.data[2].id",
-          ]);
+          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(
+            undefined,
+          );
+          expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
+          expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
+            undefined,
+          );
           expect(dataTreeEvaluator.dependencies["Text1.text"]).toStrictEqual([
             "Api1.data[2].id",
           ]);
@@ -502,11 +504,12 @@ describe("DataTreeEvaluator", () => {
             order,
             arrayAccessorCyclicDependencyConfig.apiFailureConfigTree,
             unEvalUpdates2,
+            [],
           );
 
-          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-            "Api1.data",
-          ]);
+          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(
+            undefined,
+          );
           expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
           expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
             undefined,
@@ -530,6 +533,7 @@ describe("DataTreeEvaluator", () => {
           order1,
           arrayAccessorCyclicDependencyConfig.apiSuccessConfigTree,
           unEvalUpdates,
+          [],
         );
 
         // success: response -> [{...}, {...}]
@@ -543,11 +547,10 @@ describe("DataTreeEvaluator", () => {
           order2,
           arrayAccessorCyclicDependencyConfig.apiSuccessConfigTree2,
           unEvalUpdates2,
+          [],
         );
 
-        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-          "Api1.data",
-        ]);
+        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(undefined);
         expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
         expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
           undefined,
@@ -572,19 +575,18 @@ describe("DataTreeEvaluator", () => {
             order,
             nestedArrayAccessorCyclicDependencyConfig.apiSuccessConfigTree,
             unEvalUpdates,
+            [],
           );
-          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-            "Api1.data",
-          ]);
-          expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([
-            "Api1.data[2]",
-          ]);
-          expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual([
-            "Api1.data[2][2]",
-          ]);
+          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(
+            undefined,
+          );
+          expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
+          expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
+            undefined,
+          );
           expect(
             dataTreeEvaluator.dependencies["Api1.data[2][2]"],
-          ).toStrictEqual(["Api1.data[2][2].id"]);
+          ).toStrictEqual(undefined);
           expect(dataTreeEvaluator.dependencies["Text1.text"]).toStrictEqual([
             "Api1.data[2][2].id",
           ]);
@@ -600,10 +602,11 @@ describe("DataTreeEvaluator", () => {
             order1,
             nestedArrayAccessorCyclicDependencyConfig.apiFailureConfigTree,
             unEvalUpdates2,
+            [],
           );
-          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-            "Api1.data",
-          ]);
+          expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(
+            undefined,
+          );
           expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
           expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
             undefined,
@@ -630,6 +633,7 @@ describe("DataTreeEvaluator", () => {
           order,
           nestedArrayAccessorCyclicDependencyConfig.apiSuccessConfigTree,
           unEvalUpdates,
+          [],
         );
 
         // success: response -> [ [{...}, {...}, {...}], [{...}, {...}, {...}] ]
@@ -643,11 +647,10 @@ describe("DataTreeEvaluator", () => {
           order1,
           nestedArrayAccessorCyclicDependencyConfig.apiSuccessConfigTree2,
           unEvalUpdates2,
+          [],
         );
 
-        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-          "Api1.data",
-        ]);
+        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(undefined);
         expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
         expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
           undefined,
@@ -671,6 +674,7 @@ describe("DataTreeEvaluator", () => {
           order,
           nestedArrayAccessorCyclicDependencyConfig.apiSuccessConfigTree,
           unEvalUpdates,
+          [],
         );
 
         // success: response -> [ [{...}, {...}, {...}], [{...}, {...}, {...}], [] ]
@@ -684,15 +688,12 @@ describe("DataTreeEvaluator", () => {
           order1,
           nestedArrayAccessorCyclicDependencyConfig.apiSuccessConfigTree3,
           unEvalUpdates2,
-        );
-        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual([
-          "Api1.data",
-        ]);
-        expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([
-          "Api1.data[2]",
-        ]);
-        expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
           [],
+        );
+        expect(dataTreeEvaluator.dependencies["Api1"]).toStrictEqual(undefined);
+        expect(dataTreeEvaluator.dependencies["Api1.data"]).toStrictEqual([]);
+        expect(dataTreeEvaluator.dependencies["Api1.data[2]"]).toStrictEqual(
+          undefined,
         );
         expect(dataTreeEvaluator.dependencies["Api1.data[2][2]"]).toStrictEqual(
           undefined,
@@ -788,10 +789,12 @@ describe("isDataField", () => {
         myFun2: {
           arguments: [],
           confirmBeforeExecute: false,
+          runBehaviour: "MANUAL",
         },
         myFun1: {
           arguments: [],
           confirmBeforeExecute: false,
+          runBehaviour: "MANUAL",
         },
       },
       name: "JSObject1",
@@ -833,19 +836,27 @@ describe("isDataField", () => {
         body: ["myFun2", "myFun1"],
       },
       actionNames: new Set(["myFun1", "myFun2"]),
+      dynamicTriggerPathList: [
+        {
+          key: "myFun1",
+        },
+        {
+          key: "myFun2",
+        },
+      ],
     },
     JSObject2: {
       actionId: "644242aeadc0936a9b0e71cc",
       meta: {
         myFun2: {
           arguments: [],
-
           confirmBeforeExecute: false,
+          runBehaviour: "MANUAL",
         },
         myFun1: {
           arguments: [],
-
           confirmBeforeExecute: false,
+          runBehaviour: "MANUAL",
         },
       },
       name: "JSObject2",
@@ -887,6 +898,14 @@ describe("isDataField", () => {
         body: ["myFun2", "myFun1"],
       },
       actionNames: new Set(["myFun1", "myFun2"]),
+      dynamicTriggerPathList: [
+        {
+          key: "myFun1",
+        },
+        {
+          key: "myFun2",
+        },
+      ],
     },
     MainContainer: {
       defaultProps: {},

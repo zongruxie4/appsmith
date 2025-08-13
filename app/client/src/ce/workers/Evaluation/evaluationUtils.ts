@@ -15,7 +15,7 @@ import type {
 } from "entities/DataTree/dataTreeTypes";
 import { ENTITY_TYPE } from "ee/entities/DataTree/types";
 import _, { difference, get, has, isEmpty, isNil, set } from "lodash";
-import type { WidgetTypeConfigMap } from "WidgetProvider/factory";
+import type { WidgetTypeConfigMap } from "WidgetProvider/factory/types";
 import { PluginType } from "entities/Plugin";
 import { klona } from "klona/full";
 import { warn as logWarn } from "loglevel";
@@ -29,6 +29,7 @@ import type {
   WidgetEntity,
   DataTreeEntityConfig,
   WidgetEntityConfig,
+  ActionEntityConfig,
 } from "ee/entities/DataTree/types";
 import type { EvalProps } from "workers/common/DataTreeEvaluator";
 import { validateWidgetProperty } from "workers/common/DataTreeEvaluator/validationUtils";
@@ -358,11 +359,10 @@ export const addDependantsOfNestedPropertyPaths = (
   parentPaths: Array<string>,
   inverseMap: DependencyMap,
 ): Set<string> => {
-  const withNestedPaths: Set<string> = new Set();
+  const withNestedPaths: Set<string> = new Set(parentPaths);
   const dependantNodes = Object.keys(inverseMap);
 
   parentPaths.forEach((propertyPath) => {
-    withNestedPaths.add(propertyPath);
     dependantNodes
       .filter((dependantNodePath) =>
         isChildPropertyPath(propertyPath, dependantNodePath),
@@ -403,6 +403,16 @@ export function isAction(
   );
 }
 
+export function isActionConfig(
+  entity: DataTreeEntityConfig,
+): entity is ActionEntityConfig {
+  return (
+    typeof entity === "object" &&
+    "ENTITY_TYPE" in entity &&
+    entity.ENTITY_TYPE === ENTITY_TYPE.ACTION
+  );
+}
+
 export function isAppsmithEntity(
   entity: DataTreeEntity,
 ): entity is AppsmithEntity {
@@ -413,7 +423,9 @@ export function isAppsmithEntity(
   );
 }
 
-export function isJSAction(entity: DataTreeEntity): entity is JSActionEntity {
+export function isJSAction(
+  entity: Partial<DataTreeEntity>,
+): entity is JSActionEntity {
   return (
     typeof entity === "object" &&
     "ENTITY_TYPE" in entity &&
@@ -1144,3 +1156,80 @@ export const convertMicroDiffToDeepDiff = (
       rhs: microDifference.value,
     };
   });
+
+export function getExternalChangedDependencies(
+  property: string,
+  dependencies: Record<string, string[]>,
+  valuechanged: Record<string, boolean>,
+  entityName: string,
+  visited = new Set<string>(),
+): boolean {
+  if (visited.has(property)) return false;
+
+  visited.add(property);
+
+  const deps = dependencies[property];
+
+  if (!deps || deps.length === 0) return false;
+
+  for (const dep of deps) {
+    if (!dep.startsWith(entityName + ".")) {
+      // External dependency
+      if (valuechanged[dep]) return true;
+    } else {
+      // Internal dependency, recurse
+      if (
+        getExternalChangedDependencies(
+          dep,
+          dependencies,
+          valuechanged,
+          entityName,
+          visited,
+        )
+      ) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+export const isDataPath = (
+  entity: DataTreeEntity | Partial<DataTreeEntityConfig>,
+  fullPropertyPath: string,
+) => {
+  if (isWidget(entity)) {
+    return false;
+  }
+
+  const { propertyPath } = getEntityNameAndPropertyPath(fullPropertyPath);
+
+  if (isAction(entity) && propertyPath === "data") {
+    return true;
+  }
+
+  if (isJSAction(entity)) {
+    // Check if propertyPath matches <function>.data (not just 'data')
+    if (propertyPath.endsWith(".data") && propertyPath !== "data") {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+export function isJSModuleInstance(entity: DataTreeEntity) {
+  return false;
+}
+
+export const entityTypeCheckForPathDynamicTrigger = (
+  entityConfig: DataTreeEntityConfig,
+) => {
+  return (
+    "ENTITY_TYPE" in entityConfig &&
+    (entityConfig.ENTITY_TYPE === "ACTION" ||
+      entityConfig.ENTITY_TYPE === "JSACTION")
+  );
+};

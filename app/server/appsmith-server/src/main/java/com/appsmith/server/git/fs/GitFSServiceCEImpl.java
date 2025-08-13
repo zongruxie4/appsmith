@@ -10,6 +10,7 @@ import com.appsmith.external.git.constants.GitSpan;
 import com.appsmith.external.git.constants.ce.RefType;
 import com.appsmith.external.git.dtos.FetchRemoteDTO;
 import com.appsmith.external.git.handler.FSGitHandler;
+import com.appsmith.git.configurations.GitServiceConfig;
 import com.appsmith.git.dto.CommitDTO;
 import com.appsmith.server.constants.ArtifactType;
 import com.appsmith.server.domains.Artifact;
@@ -42,6 +43,7 @@ import org.eclipse.jgit.api.errors.EmptyCommitException;
 import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.eclipse.jgit.api.errors.TransportException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.BranchTrackingStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import reactor.core.observability.micrometer.Micrometer;
@@ -78,6 +80,7 @@ public class GitFSServiceCEImpl implements GitHandlingServiceCE {
 
     protected final GitArtifactHelperResolver gitArtifactHelperResolver;
     private final FeatureFlagService featureFlagService;
+    private final GitServiceConfig gitServiceConfig;
 
     private static final String ORIGIN = "origin/";
     private static final String REMOTE_NAME_REPLACEMENT = "";
@@ -179,13 +182,26 @@ public class GitFSServiceCEImpl implements GitHandlingServiceCE {
         return obtainArtifactTypeFromGitRepository(jsonTransformationDTO).zipWith(Mono.just(""));
     }
 
+    protected Mono<ArtifactType> handleErrorWhileArtifactTypeIdentification(Throwable exception) {
+        if (exception instanceof AppsmithException appsmithException
+                && AppsmithError.GIT_FILE_SYSTEM_ERROR.getAppErrorCode().equals(appsmithException.getAppErrorCode())) {
+            return Mono.just(ArtifactType.APPLICATION);
+        }
+
+        return Mono.error(exception);
+    }
+
     public Mono<ArtifactType> obtainArtifactTypeFromGitRepository(ArtifactJsonTransformationDTO jsonTransformationDTO) {
         String workspaceId = jsonTransformationDTO.getWorkspaceId();
         String placeHolder = jsonTransformationDTO.getBaseArtifactId();
         String repoName = jsonTransformationDTO.getRepoName();
         Path temporaryStorage = Path.of(workspaceId, placeHolder, repoName);
 
-        return commonGitFileUtils.getArtifactJsonTypeOfRepository(temporaryStorage);
+        return commonGitFileUtils
+                .getArtifactJsonTypeOfRepository(temporaryStorage)
+                .onErrorResume(error -> {
+                    return handleErrorWhileArtifactTypeIdentification(error);
+                });
     }
 
     @Override
@@ -675,6 +691,20 @@ public class GitFSServiceCEImpl implements GitHandlingServiceCE {
     }
 
     @Override
+    public Mono<BranchTrackingStatus> getBranchTrackingStatus(ArtifactJsonTransformationDTO jsonTransformationDTO) {
+        String workspaceId = jsonTransformationDTO.getWorkspaceId();
+        String baseArtifactId = jsonTransformationDTO.getBaseArtifactId();
+        String repoName = jsonTransformationDTO.getRepoName();
+        String refName = jsonTransformationDTO.getRefName();
+
+        ArtifactType artifactType = jsonTransformationDTO.getArtifactType();
+        GitArtifactHelper<?> gitArtifactHelper = gitArtifactHelperResolver.getArtifactHelper(artifactType);
+        Path repoSuffix = gitArtifactHelper.getRepoSuffixPath(workspaceId, baseArtifactId, repoName);
+
+        return fsGitHandler.getBranchTrackingStatus(repoSuffix, refName);
+    }
+
+    @Override
     public Mono<String> mergeBranches(ArtifactJsonTransformationDTO jsonTransformationDTO, GitMergeDTO gitMergeDTO) {
         String workspaceId = jsonTransformationDTO.getWorkspaceId();
         String baseArtifactId = jsonTransformationDTO.getBaseArtifactId();
@@ -683,6 +713,12 @@ public class GitFSServiceCEImpl implements GitHandlingServiceCE {
         ArtifactType artifactType = jsonTransformationDTO.getArtifactType();
         GitArtifactHelper<?> gitArtifactHelper = gitArtifactHelperResolver.getArtifactHelper(artifactType);
         Path repoSuffix = gitArtifactHelper.getRepoSuffixPath(workspaceId, baseArtifactId, repoName);
+
+        if (gitServiceConfig.isGitInMemory()) {
+            return fsGitHandler.mergeBranch(
+                    repoSuffix, gitMergeDTO.getSourceBranch(), gitMergeDTO.getDestinationBranch());
+        }
+
         Mono<Boolean> keepWorkingDirChangesMono =
                 featureFlagService.check(FeatureFlagEnum.release_git_reset_optimization_enabled);
 

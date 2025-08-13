@@ -16,7 +16,7 @@ import {
   isPathDynamicTrigger,
   PropertyEvaluationErrorType,
 } from "utils/DynamicBindingUtils";
-import type { WidgetTypeConfigMap } from "WidgetProvider/factory";
+import type { WidgetTypeConfigMap } from "WidgetProvider/factory/types";
 import type {
   WidgetEntity,
   WidgetEntityConfig,
@@ -32,14 +32,13 @@ import type {
   ConfigTree,
   UnEvalTree,
 } from "entities/DataTree/dataTreeTypes";
-import {
-  EvaluationSubstitutionType,
-  ENTITY_TYPE,
-} from "ee/entities/DataTree/types";
+import { ENTITY_TYPE } from "ee/entities/DataTree/types";
 import type { DataTreeDiff } from "ee/workers/Evaluation/evaluationUtils";
 import {
   convertMicroDiffToDeepDiff,
   getAllPathsBasedOnDiffPaths,
+  isDataPath,
+  isJSModuleInstance,
   isPropertyAnEntityAction,
 } from "ee/workers/Evaluation/evaluationUtils";
 
@@ -66,6 +65,7 @@ import {
   isAPathDynamicBindingPath,
   isAnyJSAction,
   isNotEntity,
+  getExternalChangedDependencies,
 } from "ee/workers/Evaluation/evaluationUtils";
 import {
   difference,
@@ -78,7 +78,6 @@ import {
   isObject,
   isUndefined,
   set,
-  union,
   unset,
 } from "lodash";
 
@@ -137,7 +136,10 @@ import userLogs from "workers/Evaluation/fns/overrides/console";
 import ExecutionMetaData from "workers/Evaluation/fns/utils/ExecutionMetaData";
 import DependencyMap from "entities/DependencyMap";
 import { DependencyMapUtils } from "entities/DependencyMap/DependencyMapUtils";
-import { isWidgetActionOrJsObject } from "ee/entities/DataTree/utils";
+import {
+  isWidgetActionOrJsObject,
+  isThemeUnevaluatedValue,
+} from "ee/entities/DataTree/utils";
 import DataStore from "workers/Evaluation/dataStore";
 import { updateTreeWithData } from "workers/Evaluation/dataStore/utils";
 import microDiff from "microdiff";
@@ -156,6 +158,7 @@ import { WorkerEnv } from "workers/Evaluation/handlers/workerEnv";
 import type { WebworkerSpanData, Attributes } from "instrumentation/types";
 import type { AffectedJSObjects } from "actions/EvaluationReduxActionTypes";
 import type { UpdateActionProps } from "workers/Evaluation/handlers/types";
+import { EvaluationSubstitutionType } from "constants/EvaluationConstants";
 
 type SortedDependencies = Array<string>;
 export interface EvalProps {
@@ -342,7 +345,11 @@ export default class DataTreeEvaluator {
 
     const sortDependenciesStartTime = performance.now();
 
-    this.sortedDependencies = this.sortDependencies(this.dependencyMap);
+    this.sortedDependencies = this.sortDependencies(
+      this.dependencyMap,
+      [],
+      configTree,
+    );
     const sortDependenciesEndTime = performance.now();
 
     const secondCloneStartTime = performance.now();
@@ -465,6 +472,7 @@ export default class DataTreeEvaluator {
     evalTree: DataTree;
     evalMetaUpdates: EvalMetaUpdates;
     staleMetaIds: string[];
+    executeReactiveActions: string[];
   } {
     const evaluationStartTime = performance.now();
 
@@ -472,7 +480,12 @@ export default class DataTreeEvaluator {
 
     const unEvalTreeClone = klonaJSON(this.oldUnEvalTree);
     // Evaluate
-    const { evalMetaUpdates, evaluatedTree, staleMetaIds } = this.evaluateTree(
+    const {
+      evalMetaUpdates,
+      evaluatedTree,
+      executeReactiveActions,
+      staleMetaIds,
+    } = this.evaluateTree(
       unEvalTreeClone,
       evaluationOrder,
       undefined,
@@ -509,6 +522,7 @@ export default class DataTreeEvaluator {
       evalTree: this.getEvalTree(),
       evalMetaUpdates,
       staleMetaIds,
+      executeReactiveActions,
     };
   }
 
@@ -762,12 +776,26 @@ export default class DataTreeEvaluator {
       undefined,
       webworkerTelemetry,
       () => {
-        const pathsToSkipFromEval =
+        let pathsToSkipFromEval =
           actionDataPayloadConsolidated
             ?.map(({ dataPath, entityName }) => {
               return [entityName, dataPath];
             })
             .map((path: string[]) => path.join(".")) || [];
+
+        // Remove all .data paths
+        pathsToSkipFromEval = pathsToSkipFromEval.filter((path) => {
+          if (!path.endsWith(".data")) return true;
+
+          const { entityName } = getEntityNameAndPropertyPath(path);
+          const entity = unEvalTree[entityName];
+
+          if (entity && isDataPath(entity, path)) {
+            return false; // filter out
+          }
+
+          return true; // keep for other entity types
+        });
 
         return this.setupTree(updatedUnEvalTreeJSObjects, updatedValuePaths, {
           dependenciesOfRemovedPaths,
@@ -935,6 +963,7 @@ export default class DataTreeEvaluator {
     evalMetaUpdates: EvalMetaUpdates;
     staleMetaIds: string[];
     contextTree: DataTree;
+    executeReactiveActions: string[];
   } {
     const evaluationStartTime = performance.now();
 
@@ -942,6 +971,7 @@ export default class DataTreeEvaluator {
       contextTree,
       evalMetaUpdates,
       evaluatedTree: newEvalTree,
+      executeReactiveActions,
       staleMetaIds,
     } = this.evaluateTree(
       this.evalTree,
@@ -970,6 +1000,7 @@ export default class DataTreeEvaluator {
       evalMetaUpdates,
       staleMetaIds,
       contextTree,
+      executeReactiveActions,
     };
   }
 
@@ -977,29 +1008,29 @@ export default class DataTreeEvaluator {
     changes: Array<string>,
     inverseMap: Record<string, string[]>,
   ): Array<string> {
-    let finalSortOrder: Array<string> = [];
     let computeSortOrder = true;
     // Initialize parents with the current sent of property paths that need to be evaluated
     let parents = changes;
     let subSortOrderArray: Array<string>;
-    let visitedNodes: string[] = [];
+    const visitedNodesSet = new Set<string>();
+    // Remove duplicates from this list. Since we explicitly walk down the tree and implicitly (by fetching parents) walk
+    // up the tree, there are bound to be many duplicates.
+    const uniqueKeysInSortOrder = new Set<string>();
 
     while (computeSortOrder) {
       // Get all the nodes that would be impacted by the evaluation of the nodes in parents array in sorted order
       subSortOrderArray = this.getEvaluationSortOrder(parents, inverseMap);
-      visitedNodes = union(visitedNodes, parents);
-      // Add all the sorted nodes in the final list
-      finalSortOrder = union(finalSortOrder, subSortOrderArray);
+
+      // Add all parents and subSortOrderArray nodes to their respective sets
+      for (const node of parents) visitedNodesSet.add(node);
+
+      for (const node of subSortOrderArray) uniqueKeysInSortOrder.add(node);
 
       parents = getImmediateParentsOfPropertyPaths(subSortOrderArray);
       // If we find parents of the property paths in the sorted array, we should continue finding all the nodes dependent
       // on the parents
-      computeSortOrder = difference(parents, visitedNodes).length > 0;
+      computeSortOrder = parents.some((parent) => !visitedNodesSet.has(parent));
     }
-
-    // Remove duplicates from this list. Since we explicitly walk down the tree and implicitly (by fetching parents) walk
-    // up the tree, there are bound to be many duplicates.
-    const uniqueKeysInSortOrder = new Set(finalSortOrder);
 
     // if a property path evaluation gets triggered by diff top order changes
     // this could lead to incorrect sort order in spite of the bfs traversal
@@ -1082,7 +1113,7 @@ export default class DataTreeEvaluator {
 
   evaluateTree(
     unEvalTree: DataTree,
-    evaluationOrder: Array<string>,
+    evaluationOrder: string[],
     options: {
       isFirstTree: boolean;
       unevalUpdates: DataTreeDiff[];
@@ -1098,12 +1129,14 @@ export default class DataTreeEvaluator {
     evalMetaUpdates: EvalMetaUpdates;
     staleMetaIds: string[];
     contextTree: DataTree;
+    executeReactiveActions: string[];
   } {
     resetWorkerGlobalScope();
 
     const safeTree = klonaJSON(unEvalTree);
     const dataStore = DataStore.getDataStore();
     const dataStoreClone = klonaJSON(dataStore);
+    const executeReactiveActions: string[] = [];
 
     updateTreeWithData(safeTree, dataStoreClone);
     updateTreeWithData(unEvalTree, dataStore);
@@ -1115,6 +1148,8 @@ export default class DataTreeEvaluator {
      * SafeTree is free of mutations because we make sure to only set evaluated values into it.
      */
     const contextTree = unEvalTree;
+
+    const valuechanged: Record<string, boolean> = {};
 
     errorModifier.updateAsyncFunctions(
       contextTree,
@@ -1141,6 +1176,10 @@ export default class DataTreeEvaluator {
       });
     }
 
+    const dependencies = this.dependencyMap.dependencies;
+    // Add a cache for specific appsmith theme properties
+    const themePropertyCache = new Map<string, unknown>();
+
     try {
       for (const fullPropertyPath of evaluationOrder) {
         const { entityName, propertyPath } =
@@ -1149,6 +1188,11 @@ export default class DataTreeEvaluator {
         const entityConfig = oldConfigTree[entityName];
 
         if (!isWidgetActionOrJsObject(entity)) continue;
+
+        if (isDataPath(entity, fullPropertyPath)) {
+          valuechanged[fullPropertyPath] = true;
+          continue;
+        }
 
         // Skip evaluations for actions in JSObjects
         if (isPropertyAnEntityAction(entity, propertyPath, entityConfig)) {
@@ -1165,12 +1209,41 @@ export default class DataTreeEvaluator {
           propertyPath,
         );
 
-        const isATriggerPath =
-          isWidget(entity) &&
-          isPathDynamicTrigger(
-            entityConfig as WidgetEntityConfig,
-            propertyPath,
-          );
+        const isATriggerPath = isPathDynamicTrigger(entityConfig, propertyPath);
+
+        if (isATriggerPath && !isFirstTree) {
+          if (isJSAction(entity)) {
+            //check if any direct dependency is changed
+            const dependenciesForPath = dependencies[fullPropertyPath];
+
+            if (dependenciesForPath) {
+              // If this is a .data property and is a direct dependency, always push
+              const hasEntityDirectDependencyChanged = Object.keys(
+                valuechanged,
+              ).some((path) => dependenciesForPath.includes(path));
+
+              if (hasEntityDirectDependencyChanged) {
+                executeReactiveActions.push(fullPropertyPath);
+              }
+            }
+            // executeReactiveActions.push(fullPropertyPath);
+          } else {
+            if (isAction(entity) || isJSModuleInstance(entity)) {
+              const hasExternalDependencyChanged =
+                getExternalChangedDependencies(
+                  fullPropertyPath,
+                  dependencies,
+                  valuechanged,
+                  entityName,
+                );
+
+              if (hasExternalDependencyChanged) {
+                executeReactiveActions.push(fullPropertyPath);
+              }
+            }
+          }
+        }
+
         let evalPropertyValue;
         const requiresEval =
           isADynamicBindingPath &&
@@ -1198,16 +1271,32 @@ export default class DataTreeEvaluator {
           }
 
           try {
-            evalPropertyValue = this.getDynamicValue(
-              unEvalPropertyValue,
-              contextTree,
-              oldConfigTree,
-              evaluationSubstitutionType,
-              contextData,
-              undefined,
-              fullPropertyPath,
-              evalContextCache,
-            );
+            const themeEvaluatedValue =
+              themePropertyCache.get(unEvalPropertyValue);
+
+            // use the cached value if it exists
+            if (themeEvaluatedValue) {
+              evalPropertyValue = themeEvaluatedValue;
+            } else {
+              evalPropertyValue = this.getDynamicValue(
+                unEvalPropertyValue,
+                contextTree,
+                oldConfigTree,
+                evaluationSubstitutionType,
+                contextData,
+                undefined,
+                fullPropertyPath,
+                evalContextCache,
+              );
+
+              if (
+                evalPropertyValue &&
+                isThemeUnevaluatedValue(unEvalPropertyValue)
+              ) {
+                // we are caching theme properties because its a frequent unevaluated value roughly constitues 20% of all bindings
+                themePropertyCache.set(unEvalPropertyValue, evalPropertyValue);
+              }
+            }
           } catch (error) {
             this.errors.push({
               type: EvalErrorTypes.EVAL_PROPERTY_ERROR,
@@ -1232,6 +1321,9 @@ export default class DataTreeEvaluator {
         const entityType = entity.ENTITY_TYPE;
 
         if (!propertyPath) continue;
+
+        // Get old value from oldEvalTree for comparison
+        const oldValue = get(this.getPrevState(), fullPropertyPath);
 
         switch (entityType) {
           case ENTITY_TYPE.WIDGET: {
@@ -1271,6 +1363,12 @@ export default class DataTreeEvaluator {
             );
 
             set(contextTree, fullPropertyPath, parsedValue);
+
+            // Only set in safeTree if value has changed from both oldEvalTree and new evaluated value
+            if (parsedValue !== oldValue) {
+              valuechanged[fullPropertyPath] = true;
+            }
+
             set(safeTree, fullPropertyPath, klonaJSON(parsedValue));
 
             if (
@@ -1324,6 +1422,12 @@ export default class DataTreeEvaluator {
             if (!requiresEval) continue;
 
             set(contextTree, fullPropertyPath, evalPropertyValue);
+
+            // Only set in safeTree if value has changed from both oldEvalTree and new evaluated value
+            if (evalPropertyValue !== oldValue) {
+              valuechanged[fullPropertyPath] = true;
+            }
+
             set(safeTree, fullPropertyPath, klonaJSON(evalPropertyValue));
 
             if (
@@ -1373,33 +1477,47 @@ export default class DataTreeEvaluator {
              * Their evaluated values need to be reset only when the variable is modified by the user.
              * When uneval value of a js variable hasn't changed, it means that the previously evaluated values are in both trees already  */
             if (!skipVariableValueAssignment) {
-              const valueForSafeTree = klonaJSON(evalValue);
+              // Only set in safeTree if value has changed from both oldEvalTree and new evaluated value
+              if (evalValue !== oldValue) {
+                const valueForSafeTree = klonaJSON(evalValue);
 
-              set(contextTree, fullPropertyPath, evalValue);
-              set(safeTree, fullPropertyPath, valueForSafeTree);
+                valuechanged[fullPropertyPath] = true;
 
-              if (
-                WorkerEnv.flags.release_evaluation_scope_cache &&
-                evalContextCache
-              ) {
-                set(
-                  evalContextCache,
+                set(contextTree, fullPropertyPath, evalValue);
+                set(safeTree, fullPropertyPath, valueForSafeTree);
+
+                if (
+                  WorkerEnv.flags.release_evaluation_scope_cache &&
+                  evalContextCache
+                ) {
+                  set(
+                    evalContextCache,
+                    fullPropertyPath,
+                    klonaJSON(evalPropertyValue),
+                  );
+                }
+
+                JSObjectCollection.setVariableValue(
+                  evalValue,
                   fullPropertyPath,
-                  klonaJSON(evalPropertyValue),
                 );
+                JSObjectCollection.setPrevUnEvalState({
+                  fullPath: fullPropertyPath,
+                  unEvalValue: unEvalPropertyValue,
+                });
               }
-
-              JSObjectCollection.setVariableValue(evalValue, fullPropertyPath);
-              JSObjectCollection.setPrevUnEvalState({
-                fullPath: fullPropertyPath,
-                unEvalValue: unEvalPropertyValue,
-              });
             }
 
             break;
           }
           default:
             set(contextTree, fullPropertyPath, evalPropertyValue);
+
+            // Only set in safeTree if value has changed from both oldEvalTree and new evaluated value
+            if (evalPropertyValue !== oldValue) {
+              valuechanged[fullPropertyPath] = true;
+            }
+
             set(safeTree, fullPropertyPath, klonaJSON(evalPropertyValue));
 
             if (
@@ -1421,6 +1539,14 @@ export default class DataTreeEvaluator {
         message: (error as Error).message,
         stack: (error as Error).stack,
       });
+
+      return {
+        evaluatedTree: safeTree,
+        contextTree: contextTree,
+        evalMetaUpdates,
+        staleMetaIds,
+        executeReactiveActions,
+      };
     } finally {
       // Restore the dataStore since it was a part of contextTree and prone to mutation.
       DataStore.replaceDataStore(dataStoreClone);
@@ -1438,6 +1564,7 @@ export default class DataTreeEvaluator {
         contextTree: contextTree,
         evalMetaUpdates,
         staleMetaIds,
+        executeReactiveActions,
       };
     }
   }
@@ -1466,8 +1593,12 @@ export default class DataTreeEvaluator {
   sortDependencies(
     dependencyMap: DependencyMap,
     diffs?: DataTreeDiff[],
+    configTree?: ConfigTree,
   ): Array<string> {
-    const result = DependencyMapUtils.sortDependencies(dependencyMap);
+    const result = DependencyMapUtils.sortDependencies(
+      dependencyMap,
+      configTree,
+    );
 
     if (result.success) {
       return result.sortedDependencies;
@@ -1499,7 +1630,9 @@ export default class DataTreeEvaluator {
 
       this.errors.push({
         type: EvalErrorTypes.CYCLICAL_DEPENDENCY_ERROR,
-        message: "Cyclic dependency found while evaluating.",
+        message: (result.error as Error).message
+          ? (result.error as Error).message
+          : "Cyclic dependency found while evaluating.",
         context: {
           node,
           entityType,
@@ -1825,6 +1958,8 @@ export default class DataTreeEvaluator {
     const changePaths: Set<string> = new Set(dependenciesOfRemovedPaths);
     const configTree = this.getConfigTree();
 
+    const updatedValuePathsLatencyStart = performance.now();
+
     for (const pathArray of updatedValuePaths) {
       const fullPropertyPath = convertPathToString(pathArray);
 
@@ -1872,27 +2007,45 @@ export default class DataTreeEvaluator {
       }
     }
 
+    const updatedValuePathsLatency =
+      performance.now() - updatedValuePathsLatencyStart;
+
     // If a nested property path has changed and someone (say x) is dependent on the parent of the said property,
     // x must also be evaluated. For example, the following relationship exists in dependency map:
     // <  "Input1.defaultText" : ["Table1.selectedRow.email"] >
     // If Table1.selectedRow has changed, then Input1.defaultText must also be evaluated because Table1.selectedRow.email
     // is a nested property of Table1.selectedRow
+    const addDependantsOfNestedPropertyPathsLatencyStart = performance.now();
     const changePathsWithNestedDependants = addDependantsOfNestedPropertyPaths(
       Array.from(changePaths),
       this.inverseDependencies,
     );
-
+    const addDependantsOfNestedPropertyPathsLatency =
+      performance.now() - addDependantsOfNestedPropertyPathsLatencyStart;
+    const trimDependantChangePathsLatencyStart = performance.now();
     const trimmedChangedPaths = trimDependantChangePaths(
       changePathsWithNestedDependants,
       this.dependencies,
     );
+    const trimDependantChangePathsLatency =
+      performance.now() - trimDependantChangePathsLatencyStart;
 
     // Now that we have all the root nodes which have to be evaluated, recursively find all the other paths which
     // would get impacted because they are dependent on the said root nodes and add them in order
+    const completeSortOrderLatencyStart = performance.now();
     const completeSortOrder = this.getCompleteSortOrder(
       trimmedChangedPaths,
       this.inverseDependencies,
     );
+    const completeSortOrderLatency =
+      performance.now() - completeSortOrderLatencyStart;
+
+    this.logs.push({
+      updatedValuePathsLatency,
+      addDependantsOfNestedPropertyPathsLatency,
+      trimDependantChangePathsLatency,
+      completeSortOrderLatency,
+    });
 
     // Remove any paths that do not exist in the data tree anymore
     return difference(

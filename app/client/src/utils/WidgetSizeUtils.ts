@@ -4,8 +4,8 @@ import {
   MAIN_CONTAINER_WIDGET_ID,
 } from "constants/WidgetConstants";
 import type { WidgetProps } from "widgets/BaseWidget";
-import type { FlattenedWidgetProps } from "WidgetProvider/constants";
-import type { WidgetType } from "../WidgetProvider/factory";
+import type { FlattenedWidgetProps } from "WidgetProvider/types";
+import type { WidgetType } from "WidgetProvider/factory/types";
 import WidgetFactory from "../WidgetProvider/factory";
 
 /**
@@ -21,6 +21,7 @@ export const getCanvasHeightOffset = (
   props: WidgetProps,
 ) => {
   const { getCanvasHeightOffset } = WidgetFactory.getWidgetMethods(widgetType);
+
   let offset = 0;
 
   if (getCanvasHeightOffset) {

@@ -111,7 +111,7 @@ import static com.appsmith.server.constants.ce.FieldNameCE.BRANCH_NAME;
 import static com.appsmith.server.constants.ce.FieldNameCE.DEFAULT;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
-import static org.apache.commons.lang.ObjectUtils.defaultIfNull;
+import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 import static org.springframework.util.StringUtils.hasText;
 
 @Slf4j
@@ -450,8 +450,9 @@ public class CommonGitServiceCEImpl implements CommonGitServiceCE {
                                         baseArtifactId,
                                         finalBranchName,
                                         throwable);
-                                return Mono.error(new AppsmithException(
-                                        AppsmithError.GIT_ACTION_FAILED, "fetch", throwable.getMessage()));
+                                return releaseFileLock(baseArtifactId, isFileLock)
+                                        .then(Mono.error(new AppsmithException(
+                                                AppsmithError.GIT_ACTION_FAILED, "fetch", throwable.getMessage())));
                             });
                 })
                 .elapsed()
