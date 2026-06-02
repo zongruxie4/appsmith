@@ -24,7 +24,7 @@
     "@radix-ui/react-tabs": "^1.0.2",
     "@react-aria/checkbox": "^3.7.1",
     "@react-aria/focus": "^3.10.1",
-    "@react-aria/link": "^3.3.6",
+    "@react-aria/link": "^3.9.1",
     "@react-aria/radio": "^3.4.2",
     "@react-aria/slider": "^3.7.15",
     "@react-aria/switch": "^3.3.1",
