@@ -30,7 +30,7 @@
     "@storybook/test-runner": "^0.19.1",
     "@storybook/theming": "8.2.7",
     "@vitejs/plugin-react": "^4.3.1",
-    "chromatic": "^11.3.0",
+    "chromatic": "^17.2.0",
     "storybook": "8.2.7",
     "vite": "^6.2.7",
     "vite-plugin-svgr": "^4.2.0"

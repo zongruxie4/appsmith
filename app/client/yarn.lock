@@ -3030,7 +3030,7 @@ __metadata:
     "@storybook/test-runner": ^0.19.1
     "@storybook/theming": 8.2.7
     "@vitejs/plugin-react": ^4.3.1
-    chromatic: ^11.3.0
+    chromatic: ^17.2.0
     glob: ^11.0.0
     storybook: 8.2.7
     vite: ^6.2.7
@@ -15756,7 +15756,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^11.3.0, chromatic@npm:^11.4.0":
+"chromatic@npm:^11.4.0":
   version: 11.5.6
   resolution: "chromatic@npm:11.5.6"
   peerDependencies:
@@ -15772,6 +15772,30 @@ __metadata:
     chromatic: dist/bin.js
     chromatic-cli: dist/bin.js
   checksum: 968ff879301f963e25bed6f7be1f796dee90b06bbc1824004c97aa83dd83a959d39c4639e04e6cd947e5d4bcf0ab09d5908d0960dfb7b5f9483541f222a787ab
+  languageName: node
+  linkType: hard
+
+"chromatic@npm:^17.2.0":
+  version: 17.2.0
+  resolution: "chromatic@npm:17.2.0"
+  dependencies:
+    semver: ^7.3.5
+  peerDependencies:
+    "@chromatic-com/cypress": ^0.*.* || ^1.0.0
+    "@chromatic-com/playwright": ^0.*.* || ^1.0.0
+    "@chromatic-com/vitest": ^0.*.* || ^1.0.0
+  peerDependenciesMeta:
+    "@chromatic-com/cypress":
+      optional: true
+    "@chromatic-com/playwright":
+      optional: true
+    "@chromatic-com/vitest":
+      optional: true
+  bin:
+    chroma: dist/bin.cjs
+    chromatic: dist/bin.cjs
+    chromatic-cli: dist/bin.cjs
+  checksum: 1351ccf81bfee4a62647234e3ee6a78dfeb1076c8fe0c8f9a3300db83e7508cbb194b394019c02bdbb8f3e732bea6457a58e6e0ffea24004c6bc87fa6ed779c4
   languageName: node
   linkType: hard
 
