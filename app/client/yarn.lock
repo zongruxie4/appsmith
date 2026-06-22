@@ -13923,7 +13923,7 @@ __metadata:
     eslint-plugin-storybook: ^0.6.15
     eslint-plugin-testing-library: ^6.2.0
     eslint-webpack-plugin: ^3.1.1
-    factory.ts: ^0.5.1
+    factory.ts: ^1.4.2
     fast-deep-equal: ^3.1.3
     fast-sort: ^3.4.0
     fastdom: ^1.0.11
@@ -19719,13 +19719,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"factory.ts@npm:^0.5.1":
-  version: 0.5.1
-  resolution: "factory.ts@npm:0.5.1"
+"factory.ts@npm:^1.4.2":
+  version: 1.4.2
+  resolution: "factory.ts@npm:1.4.2"
   dependencies:
     clone-deep: ^4.0.1
-    source-map-support: ^0.5.9
-  checksum: 77b81dc6beb55e73dd16fed6097f6ddd65c73bc41057dc4f120bb052e5e12b45a08557b0eabd7bfc0c3664e3240eac3f62f8661013e5bb8e4e05acc625e27ea2
+    source-map-support: ^0.5.21
+  checksum: 22d13fa1ea1640e7b764abda359a33d28452ba84c5d33dbe22dffaed745afb202339caea9ca9a58103160399cec1d60cd01d730867a9d65e15275c66284c8e48
   languageName: node
   linkType: hard
 
@@ -32468,7 +32468,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map-support@npm:^0.5.16, source-map-support@npm:^0.5.9, source-map-support@npm:~0.5.20":
+"source-map-support@npm:^0.5.16, source-map-support@npm:^0.5.21, source-map-support@npm:~0.5.20":
   version: 0.5.21
   resolution: "source-map-support@npm:0.5.21"
   dependencies:
