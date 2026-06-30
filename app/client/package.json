@@ -270,7 +270,7 @@
     "@testing-library/jest-dom": "5.16.1",
     "@testing-library/react": "12.1.2",
     "@testing-library/react-hooks": "^8.0.1",
-    "@testing-library/user-event": "13.5.0",
+    "@testing-library/user-event": "14.6.1",
     "@types/codemirror": "^0.0.96",
     "@types/deep-diff": "^1.0.0",
     "@types/dom-view-transitions": "^1.0.5",
