@@ -28,7 +28,7 @@
     <properties>
         <deploy.disabled>true</deploy.disabled>
         <!-- Pinned to 2.18.8 for CVE-2026-54512 / CVE-2026-54513 -->
-        <jackson-bom.version>2.18.8</jackson-bom.version>
+        <jackson-bom.version>2.22.0</jackson-bom.version>
         <jackson.version>2.18.8</jackson.version>
         <java.version>25</java.version>
         <javadoc.disabled>true</javadoc.disabled>
