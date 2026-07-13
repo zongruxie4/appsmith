@@ -266,7 +266,7 @@
     "@peculiar/webcrypto": "^1.4.3",
     "@playwright/test": "1.59.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
-    "@simonsmith/cypress-image-snapshot": "^9.1.0",
+    "@simonsmith/cypress-image-snapshot": "^10.0.4",
     "@testing-library/jest-dom": "5.16.1",
     "@testing-library/react": "12.1.2",
     "@testing-library/react-hooks": "^8.0.1",
