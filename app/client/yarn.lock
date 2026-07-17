@@ -14017,7 +14017,7 @@ __metadata:
     cypress-xpath: ^1.6.0
     d3-geo: ^3.1.0
     date-fns: ^4.1.0
-    dayjs: ^1.10.6
+    dayjs: ^1.11.21
     deep-diff: ^1.0.2
     diff: ^5.0.0
     dotenv: ^10.0.0
@@ -17565,10 +17565,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dayjs@npm:^1.10.4, dayjs@npm:^1.10.6":
-  version: 1.11.7
-  resolution: "dayjs@npm:1.11.7"
-  checksum: 5003a7c1dd9ed51385beb658231c3548700b82d3548c0cfbe549d85f2d08e90e972510282b7506941452c58d32136d6362f009c77ca55381a09c704e9f177ebb
+"dayjs@npm:^1.10.4, dayjs@npm:^1.11.21":
+  version: 1.11.21
+  resolution: "dayjs@npm:1.11.21"
+  checksum: f168e00e88c5bf5a1153090f2fb279e0f7b5f0ee332062abfd5c6e2e8e0f1ba27c3f278183d73668cdfeefdd50b1d13346fdc2ace441962fc9ca6363f902ad05
   languageName: node
   linkType: hard
 
