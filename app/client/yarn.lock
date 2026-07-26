@@ -4977,7 +4977,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/core@npm:^1.26.0, @opentelemetry/core@npm:^1.30.0":
+"@opentelemetry/core@npm:^1.26.0":
   version: 1.30.1
   resolution: "@opentelemetry/core@npm:1.30.1"
   dependencies:
@@ -4985,6 +4985,17 @@ __metadata:
   peerDependencies:
     "@opentelemetry/api": ">=1.0.0 <1.10.0"
   checksum: fe71452fffc6b5efe4bd1f0ab18b0424e744825f9a837f5bf08be80fe6d2c90c443743cb3d220cffad27b7d83dc38e0a7861c91ec965be156394e752c95e583c
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/core@npm:^2.10.0":
+  version: 2.10.0
+  resolution: "@opentelemetry/core@npm:2.10.0"
+  dependencies:
+    "@opentelemetry/semantic-conventions": ^1.29.0
+  peerDependencies:
+    "@opentelemetry/api": ">=1.0.0 <1.10.0"
+  checksum: ea01075b1746d2eee82d180bd7a002195bd761766e63653383345f9112db912146bda9525861054d8cd295f80eb721e4aed69ae957cb1da056606ede4bab098f
   languageName: node
   linkType: hard
 
@@ -5432,10 +5443,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/semantic-conventions@npm:1.28.0, @opentelemetry/semantic-conventions@npm:^1.27.0, @opentelemetry/semantic-conventions@npm:^1.28.0":
+"@opentelemetry/semantic-conventions@npm:1.28.0":
   version: 1.28.0
   resolution: "@opentelemetry/semantic-conventions@npm:1.28.0"
   checksum: 1d708afa654990236cdb6b5da84f7ab899b70bff9f753bc49d93616a5c7f7f339ba1eba6a9fbb57dee596995334f4e7effa57a4624741882ab5b3c419c3511e2
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/semantic-conventions@npm:^1.27.0, @opentelemetry/semantic-conventions@npm:^1.28.0, @opentelemetry/semantic-conventions@npm:^1.29.0":
+  version: 1.43.0
+  resolution: "@opentelemetry/semantic-conventions@npm:1.43.0"
+  checksum: b20c4758006dc2d01174edfd8a3b1daab576f3bf39acfa8e8c72ad47eea033514fd194985fabd99b550dd0258b703995a3938d8685b78db5fcf6db3b7c827dde
   languageName: node
   linkType: hard
 
@@ -13886,7 +13904,7 @@ __metadata:
     "@octokit/rest": ^20.0.1
     "@opentelemetry/api": ^1.9.0
     "@opentelemetry/context-zone": ^1.30.0
-    "@opentelemetry/core": ^1.30.0
+    "@opentelemetry/core": ^2.10.0
     "@opentelemetry/exporter-trace-otlp-http": ^0.57.0
     "@opentelemetry/instrumentation": ^0.57.0
     "@opentelemetry/resources": ^1.30.0
