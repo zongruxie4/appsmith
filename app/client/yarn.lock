@@ -9385,7 +9385,7 @@ __metadata:
     "@typescript-eslint/eslint-plugin": ^5.25.0
     "@typescript-eslint/parser": ^5.25.0
     acorn: 8.14.0
-    acorn-walk: 8.3.4
+    acorn-walk: 8.3.5
     astravel: ^0.6.1
     astring: ^1.7.5
     escodegen: ^2.0.0
@@ -13474,19 +13474,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn-walk@npm:8.2.0":
-  version: 8.2.0
-  resolution: "acorn-walk@npm:8.2.0"
-  checksum: 1715e76c01dd7b2d4ca472f9c58968516a4899378a63ad5b6c2d668bba8da21a71976c14ec5f5b75f887b6317c4ae0b897ab141c831d741dc76024d8745f1ad1
-  languageName: node
-  linkType: hard
-
-"acorn-walk@npm:8.3.4, acorn-walk@npm:^8.0.2, acorn-walk@npm:^8.1.1, acorn-walk@npm:^8.2.0":
-  version: 8.3.4
-  resolution: "acorn-walk@npm:8.3.4"
+"acorn-walk@npm:8.3.5, acorn-walk@npm:^8.0.2, acorn-walk@npm:^8.1.1, acorn-walk@npm:^8.2.0":
+  version: 8.3.5
+  resolution: "acorn-walk@npm:8.3.5"
   dependencies:
     acorn: ^8.11.0
-  checksum: 4ff03f42323e7cf90f1683e08606b0f460e1e6ac263d2730e3df91c7665b6f64e696db6ea27ee4bed18c2599569be61f28a8399fa170c611161a348c402ca19c
+  checksum: ea8b55206c8913ce1d71a62dc10215ad919e3caf64053de72038e0be25dd8ef1454ffdcb6f25ed3b5325204f7ae18131e7fbbdfd7554f9538985a570188c60a8
   languageName: node
   linkType: hard
 
@@ -13971,7 +13964,7 @@ __metadata:
     "@uppy/webcam": ^1.8.4
     "@welldone-software/why-did-you-render": ^4.2.5
     acorn: 8.10.0
-    acorn-walk: 8.2.0
+    acorn-walk: 8.3.5
     appsmith-icons: "workspace:^"
     assert-never: ^1.2.1
     astring: ^1.7.5
