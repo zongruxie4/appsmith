@@ -13740,7 +13740,7 @@ __metadata:
     codemirror: ^5.65.13
     codemirror-graphql: ^1.2.14
     colorjs.io: ^0.5.2
-    compression-webpack-plugin: ^11.1.0
+    compression-webpack-plugin: ^12.0.0
     copy-to-clipboard: ^3.3.1
     core-js: ^3.9.1
     css-loader: ^6.5.1
@@ -16235,15 +16235,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"compression-webpack-plugin@npm:^11.1.0":
-  version: 11.1.0
-  resolution: "compression-webpack-plugin@npm:11.1.0"
+"compression-webpack-plugin@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "compression-webpack-plugin@npm:12.0.0"
   dependencies:
     schema-utils: ^4.2.0
-    serialize-javascript: ^6.0.2
+    serialize-javascript: ^7.0.3
   peerDependencies:
     webpack: ^5.1.0
-  checksum: 11cb5023b75f87cb53403d86ab3b4d19ae387ec305f2d1bbe064913b2b1d594df6ef73b96738beecc3d444b07f088eb14b752865cff7370c6dcee9e1c18ecfb1
+  checksum: b1b91026d7e612bba602cf01fef0dc04b74017461a6242ec33ed853fdfb1c7aeb6d1862c17c864c2045a8796dad9366bf19c6379da6354d4ff3ad5608bff72bf
   languageName: node
   linkType: hard
 
@@ -31794,12 +31794,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"serialize-javascript@npm:^6.0.0, serialize-javascript@npm:^6.0.1, serialize-javascript@npm:^6.0.2":
+"serialize-javascript@npm:^6.0.0, serialize-javascript@npm:^6.0.1":
   version: 6.0.2
   resolution: "serialize-javascript@npm:6.0.2"
   dependencies:
     randombytes: ^2.1.0
   checksum: c4839c6206c1d143c0f80763997a361310305751171dd95e4b57efee69b8f6edd8960a0b7fbfc45042aadff98b206d55428aee0dc276efe54f100899c7fa8ab7
+  languageName: node
+  linkType: hard
+
+"serialize-javascript@npm:^7.0.3":
+  version: 7.1.0
+  resolution: "serialize-javascript@npm:7.1.0"
+  checksum: 8275cd8d8639abac2850530b3aa1dc67b055301b5d2e740acc8f7dadef68a924d290aac96cff838f44de4c9b85dc87780ce2ce5dda5af648bab153731ca7153a
   languageName: node
   linkType: hard
 
