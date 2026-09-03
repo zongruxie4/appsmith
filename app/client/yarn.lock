@@ -14114,7 +14114,7 @@ __metadata:
     tinymce: 7.9.3
     toposort: ^2.0.2
     ts-jest: ^29.1.0
-    ts-jest-mock-import-meta: ^0.12.0
+    ts-jest-mock-import-meta: ^1.3.2
     ts-node: ^10.9.1
     tslib: ^2.3.1
     typescript: ^5.5.4
@@ -34352,12 +34352,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-jest-mock-import-meta@npm:^0.12.0":
-  version: 0.12.0
-  resolution: "ts-jest-mock-import-meta@npm:0.12.0"
+"ts-jest-mock-import-meta@npm:^1.3.2":
+  version: 1.3.2
+  resolution: "ts-jest-mock-import-meta@npm:1.3.2"
   peerDependencies:
     ts-jest: ">=20.0.0"
-  checksum: 85c0e7992af05cec144e0d75f99601955bb207a66ac884550a8a9f411c93f45b67b920d77a0342564e514c7c09dc92867ae88c995a7acaa5828576d35a94842f
+  checksum: 04ac245dda7aac90f0c5f93a061295704ff7c6ac94b5fcb968c4c43dbe9c06851bcbe97e7a235cca62b2d11533f622baf237c7a709684f7e88d2b97c1809819a
   languageName: node
   linkType: hard
 
