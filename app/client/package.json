@@ -234,7 +234,7 @@
     "smartlook-client": "^8.0.0",
     "sql-formatter": "12.2.0",
     "styled-components": "^5.3.6",
-    "tailwindcss": "^3.3.3",
+    "tailwindcss": "^4.3.3",
     "tern": "^0.21.0",
     "tinycolor2": "^1.4.2",
     "tinymce": "7.9.3",
